@@ -1,0 +1,45 @@
+services:
+  darkpose:
+    build: .
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - DATASET_ROOT=/data
+      - COCO_ROOT=/data/MSCOCO
+      - MPII_ROOT=/data/MPII
+      - MODELS_ROOT=/data/models
+    volumes:
+      - ${DATASET_ROOT:-./data}:/data
+      - ./output:/app/output
+      - ./log:/app/log
+      - ./models:/app/models
+
+  train:
+    build: .
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      - ${DATASET_ROOT:-./data}:/data
+      - ./output:/app/output
+      - ./log:/app/log
+      - ./models:/app/models
+    entrypoint: ["python3", "tools/train.py"]
+    command: ["--cfg", "experiments/coco/hrnet/w32_256x192_adam_lr1e-3.yaml"]
+
+  test:
+    build: .
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      - ${DATASET_ROOT:-./data}:/data
+      - ./output:/app/output
+      - ./log:/app/log
+      - ./models:/app/models
+    entrypoint: ["python3", "tools/test.py"]
+    command:
+      - "--cfg"
+      - "experiments/coco/hrnet/w32_256x192_adam_lr1e-3.yaml"
+      - "TEST.MODEL_FILE"
+      - "models/pose_coco/pose_hrnet_w32_256x192.pth"
